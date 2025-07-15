@@ -210,6 +210,7 @@ require('dotenv').config();
 const { mongoose } = require('./db'); // ✅ Use shared DB file
 const applicationRoutes = require('./routes/applications');
 const contactRoutes = require('./routes/contact');
+const jobRoutes = require('./routes/jobs');
 
 const app = express();
 const PORT = process.env.PORT;
@@ -233,6 +234,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.use('/api/applications', applicationRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

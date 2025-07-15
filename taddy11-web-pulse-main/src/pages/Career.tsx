@@ -1,1233 +1,674 @@
-import React, { useState } from 'react';
-import { useNavigate } from "react-router-dom";
-import axios from 'axios';
-import { Search, MapPin, Clock, Users, Award, Heart, Code, Smartphone, Server, Settings, User, Palette, TestTube, X, Send, CheckCircle, Building, Globe, Zap } from 'lucide-react';
-import Navbar from '../components/layout/Navbar';
-import { TrendingUp } from 'lucide-react';
-import { Edit, Trash2, Eye } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  MapPin, 
+  Clock, 
+  DollarSign, 
+  Users, 
+  Send, 
+  Upload,
+  Briefcase,
+  CheckCircle,
+  Star,
+  Award,
+  Heart,
+  Coffee,
+  Zap
+} from "lucide-react";
+import axios from "axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-
-
-interface Job {
-  id: string;
+interface JobPosition {
+  _id: string;
   title: string;
   department: string;
   location: string;
   type: string;
-  experience: string;
-  icon: React.ReactNode;
   description: string;
   requirements: string[];
   responsibilities: string[];
   salary: string;
+  experience: string;
+  benefits: string[];
+  isActive: boolean;
+  createdAt: string;
 }
 
-const jobs: Job[] = [
-  {
-    id: '1',
-    title: 'Frontend Developer',
-    department: 'Engineering',
-    location: 'Remote / San Francisco',
-    type: 'Full-time',
-    experience: '2-4 years',
-    salary: '$80,000 - $120,000',
-    icon: <Code className="w-6 h-6" />,
-    description: 'Join our frontend team to build beautiful, responsive user interfaces using React, TypeScript, and modern web technologies.',
-    requirements: [
-      'Strong proficiency in React, TypeScript, and modern JavaScript',
-      'Experience with state management (Redux, Zustand, or Context API)',
-      'Knowledge of CSS frameworks (Tailwind CSS preferred)',
-      'Understanding of responsive design and cross-browser compatibility',
-      'Familiarity with testing frameworks (Jest, React Testing Library)'
-    ],
-    responsibilities: [
-      'Develop and maintain user-facing features using React and TypeScript',
-      'Collaborate with designers to implement pixel-perfect UI components',
-      'Optimize applications for maximum speed and scalability',
-      'Participate in code reviews and maintain high code quality standards',
-      'Work closely with backend developers to integrate APIs'
-    ]
-  },
-  {
-    id: '2',
-    title: 'Full Stack Developer',
-    department: 'Engineering',
-    location: 'Remote / New York',
-    type: 'Full-time',
-    experience: '3-5 years',
-    salary: '$90,000 - $140,000',
-    icon: <Server className="w-6 h-6" />,
-    description: 'Build end-to-end solutions using modern web technologies. Work on both frontend and backend systems to deliver complete features.',
-    requirements: [
-      'Proficiency in React, Node.js, and TypeScript',
-      'Experience with databases (PostgreSQL, MongoDB)',
-      'Knowledge of cloud platforms (AWS, GCP, or Azure)',
-      'Understanding of RESTful APIs and GraphQL',
-      'Experience with containerization (Docker, Kubernetes)'
-    ],
-    responsibilities: [
-      'Design and develop full-stack applications from conception to deployment',
-      'Build and maintain scalable backend services and APIs',
-      'Implement database schemas and optimize query performance',
-      'Ensure application security and implement best practices',
-      'Collaborate with cross-functional teams to deliver features'
-    ]
-  },
-  {
-    id: '3',
-    title: 'Mobile App Developer',
-    department: 'Engineering',
-    location: 'Remote / Austin',
-    type: 'Full-time',
-    experience: '2-4 years',
-    salary: '$75,000 - $115,000',
-    icon: <Smartphone className="w-6 h-6" />,
-    description: 'Create amazing mobile experiences for iOS and Android platforms using React Native and native development tools.',
-    requirements: [
-      'Experience with React Native or native iOS/Android development',
-      'Knowledge of mobile UI/UX design principles',
-      'Understanding of app store submission processes',
-      'Experience with push notifications and offline functionality',
-      'Familiarity with mobile testing frameworks'
-    ],
-    responsibilities: [
-      'Develop cross-platform mobile applications using React Native',
-      'Implement native modules when required for platform-specific features',
-      'Optimize app performance and ensure smooth user experience',
-      'Collaborate with designers to create intuitive mobile interfaces',
-      'Handle app store submissions and version management'
-    ]
-  },
-  {
-    id: '4',
-    title: 'DevOps Engineer',
-    department: 'Infrastructure',
-    location: 'Remote / Seattle',
-    type: 'Full-time',
-    experience: '3-6 years',
-    salary: '$95,000 - $150,000',
-    icon: <Settings className="w-6 h-6" />,
-    description: 'Build and maintain our cloud infrastructure, CI/CD pipelines, and deployment systems to support our growing platform.',
-    requirements: [
-      'Experience with cloud platforms (AWS, GCP, Azure)',
-      'Proficiency in containerization (Docker, Kubernetes)',
-      'Knowledge of Infrastructure as Code (Terraform, CloudFormation)',
-      'Experience with CI/CD pipelines (Jenkins, GitLab CI, GitHub Actions)',
-      'Strong scripting skills (Bash, Python, Go)'
-    ],
-    responsibilities: [
-      'Design and maintain scalable cloud infrastructure',
-      'Implement and optimize CI/CD pipelines for automated deployments',
-      'Monitor system performance and implement alerting solutions',
-      'Ensure security best practices across all environments',
-      'Collaborate with development teams to improve deployment processes'
-    ]
-  },
-  {
-    id: '5',
-    title: 'UX/UI Designer',
-    department: 'Design',
-    location: 'Remote / Los Angeles',
-    type: 'Full-time',
-    experience: '2-5 years',
-    salary: '$70,000 - $110,000',
-    icon: <Palette className="w-6 h-6" />,
-    description: 'Create intuitive and beautiful user experiences that delight our customers and drive business growth.',
-    requirements: [
-      'Proficiency in design tools (Figma, Sketch, Adobe Creative Suite)',
-      'Strong understanding of user-centered design principles',
-      'Experience with prototyping and user testing',
-      'Knowledge of accessibility standards and best practices',
-      'Portfolio demonstrating strong visual and interaction design skills'
-    ],
-    responsibilities: [
-      'Design user interfaces for web and mobile applications',
-      'Conduct user research and usability testing',
-      'Create wireframes, prototypes, and high-fidelity designs',
-      'Collaborate with developers to ensure design implementation',
-      'Maintain and evolve our design system'
-    ]
-  },
-  {
-    id: '6',
-    title: 'Product Manager',
-    department: 'Product',
-    location: 'Remote / Boston',
-    type: 'Full-time',
-    experience: '3-6 years',
-    salary: '$100,000 - $160,000',
-    icon: <User className="w-6 h-6" />,
-    description: 'Drive product strategy and execution to deliver features that solve real customer problems and drive business value.',
-    requirements: [
-      'Experience in product management or related field',
-      'Strong analytical and problem-solving skills',
-      'Understanding of agile development methodologies',
-      'Experience with product analytics tools',
-      'Excellent communication and stakeholder management skills'
-    ],
-    responsibilities: [
-      'Define product roadmap and prioritize feature development',
-      'Gather and analyze customer feedback and market research',
-      'Work closely with engineering and design teams',
-      'Track product metrics and iterate based on data',
-      'Communicate product vision to stakeholders'
-    ]
-  },
-  {
-    id: '7',
-    title: 'QA Engineer',
-    department: 'Engineering',
-    location: 'Remote / Chicago',
-    type: 'Full-time',
-    experience: '2-4 years',
-    salary: '$65,000 - $95,000',
-    icon: <TestTube className="w-6 h-6" />,
-    description: 'Ensure the quality and reliability of our products through comprehensive testing strategies and automation.',
-    requirements: [
-      'Experience with manual and automated testing',
-      'Knowledge of testing frameworks (Selenium, Cypress, Jest)',
-      'Understanding of software development lifecycle',
-      'Experience with API testing and performance testing',
-      'Strong attention to detail and analytical skills'
-    ],
-    responsibilities: [
-      'Develop and execute comprehensive test plans',
-      'Create and maintain automated test suites',
-      'Identify, document, and track bugs and issues',
-      'Collaborate with development teams on quality standards',
-      'Perform regression testing and validate bug fixes'
-    ]
-  }
-];
-
-const departments = ['All', 'Engineering', 'Design', 'Product', 'Infrastructure'];
-const locations = ['All', 'Remote', 'San Francisco', 'New York', 'Austin', 'Seattle', 'Los Angeles', 'Boston', 'Chicago'];
-
-const Career: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState('All');
-  const [selectedLocation, setSelectedLocation] = useState('All');
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [showApplicationForm, setShowApplicationForm] = useState(false);
-  const [showMyApplications, setShowMyApplications] = useState(false);
-  const [myApplications, setMyApplications] = useState<any[]>([]);
-  const [userEmail, setUserEmail] = useState('');
-  const [editingApplication, setEditingApplication] = useState<any>(null);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [applicationData, setApplicationData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    resume: null as File | null,
-    coverLetter: '',
-    portfolio: '',
-    experience: '',
-    availability: '',
-    linkedIn:'',
-    skills: '',
-    expectedSalary:''
+const Career = () => {
+  const { toast } = useToast();
+  const [jobs, setJobs] = useState<JobPosition[]>([]);
+  const [selectedJob, setSelectedJob] = useState<JobPosition | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    linkedIn: "",
+    portfolio: "",
+    experience: "",
+    skills: "",
+    coverLetter: "",
+    preferredRole: "",
+    availability: "",
+    expectedSalary: ""
   });
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
-  // Fetch user applications
-  const fetchMyApplications = async (email: string) => {
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/applications?email=${email}`);
-      if (response.data.success) {
-        setMyApplications(response.data.applications);
-        setShowMyApplications(true);
-      }
-    } catch (error) {
-      console.error('Error fetching applications:', error);
-      alert('Error fetching applications');
-    }
-  };
-
-  // Handle view my applications
-  const handleViewMyApplications = () => {
-    const email = prompt('Please enter your email to view your applications:');
-    if (email) {
-      setUserEmail(email);
-      fetchMyApplications(email);
-    }
-  };
-
- 
-
-
-  // Handle edit application
-  const handleEditApplication = (application: any) => {
-    setEditingApplication(application);
-    setApplicationData({
-      name: application.name,
-      email: application.email,
-      phone: application.phone,
-      linkedIn: application.linkedIn || '',
-      portfolio: application.portfolio || '',
-      experience: application.experience,
-      skills: application.skills,
-      coverLetter: application.coverLetter,
-      availability: application.availability,
-      expectedSalary: application.expectedSalary || '',
-      resume: null
-    });
-    setShowEditForm(true);
-  };
-
-  // Handle update application
-  const handleUpdateApplication = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const formData = new FormData();
-    formData.append('name', applicationData.name);
-    formData.append('email', applicationData.email);
-    formData.append('phone', applicationData.phone);
-    formData.append('linkedIn', applicationData.linkedIn);
-    formData.append('portfolio', applicationData.portfolio);
-    formData.append('experience', applicationData.experience);
-    formData.append('skills', applicationData.skills);
-    formData.append('coverLetter', applicationData.coverLetter);
-    formData.append('preferredRole', editingApplication.preferredRole);
-    formData.append('availability', applicationData.availability);
-    formData.append('expectedSalary', applicationData.expectedSalary);
-    
-    if (applicationData.resume) {
-      formData.append('resume', applicationData.resume);
-    }
-
-    try {
-      const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/applications/${editingApplication._id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+      // Mock data for now - replace with actual API call
+      const mockJobs: JobPosition[] = [
+        {
+          _id: "1",
+          title: "Frontend Developer",
+          department: "Engineering",
+          location: "Remote / San Francisco",
+          type: "Full-time",
+          description: "Join our frontend team to build beautiful, responsive user interfaces using React, TypeScript, and modern web technologies.",
+          requirements: [
+            "Strong proficiency in React, TypeScript, and modern JavaScript",
+            "Experience with state management (Redux, Zustand, or Context API)",
+            "Knowledge of CSS frameworks (Tailwind CSS preferred)",
+            "Understanding of responsive design and cross-browser compatibility",
+            "Familiarity with testing frameworks (Jest, React Testing Library)"
+          ],
+          responsibilities: [
+            "Develop and maintain user-facing features using React and TypeScript",
+            "Collaborate with designers to implement pixel-perfect UI components",
+            "Optimize applications for maximum speed and scalability",
+            "Participate in code reviews and maintain high code quality standards",
+            "Work closely with backend developers to integrate APIs"
+          ],
+          salary: "$80,000 - $120,000",
+          experience: "2-4 years",
+          benefits: [
+            "Competitive salary and equity package",
+            "Comprehensive health, dental, and vision insurance",
+            "Flexible PTO and remote work options",
+            "Professional development budget",
+            "Modern equipment and tools"
+          ],
+          isActive: true,
+          createdAt: new Date().toISOString()
         },
-      });
-
-      if (response.data.success) {
-        alert('Application updated successfully!');
-        setShowEditForm(false);
-        setEditingApplication(null);
-        fetchMyApplications(userEmail); // Refresh the list
-        
-        // Reset form
-        setApplicationData({
-          name: '',
-          email: '',
-          phone: '',
-          linkedIn: '',
-          portfolio: '',
-          experience: '',
-          skills: '',
-          coverLetter: '',
-          availability: '',
-          expectedSalary: '',
-          resume: null
-        });
-      }
-    } catch (error) {
-      console.error('Error updating application:', error);
-      alert('Error updating application. Please try again.');
-    }
-  };
-
-  // Handle delete application
-  const handleDeleteApplication = async (applicationId: string) => {
-    if (window.confirm('Are you sure you want to delete this application? This action cannot be undone.')) {
-      try {
-        const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/applications/${applicationId}`);
-        
-        if (response.data.success) {
-          alert('Application deleted successfully!');
-          fetchMyApplications(userEmail); // Refresh the list
+        {
+          _id: "2",
+          title: "Backend Developer",
+          department: "Engineering",
+          location: "Hybrid",
+          type: "Full-time",
+          description: "Build scalable backend systems and APIs that power our applications using Node.js, Python, and cloud technologies.",
+          requirements: [
+            "Strong experience with Node.js and Python",
+            "Knowledge of database systems (MongoDB, PostgreSQL)",
+            "Experience with cloud platforms (AWS, GCP)",
+            "Understanding of microservices architecture",
+            "Familiarity with containerization (Docker, Kubernetes)"
+          ],
+          responsibilities: [
+            "Design and develop robust backend APIs",
+            "Implement database schemas and optimize queries",
+            "Deploy and maintain cloud infrastructure",
+            "Ensure system security and performance",
+            "Collaborate with frontend teams for seamless integration"
+          ],
+          salary: "$90,000 - $140,000",
+          experience: "3-5 years",
+          benefits: [
+            "Competitive salary and equity package",
+            "Comprehensive health, dental, and vision insurance",
+            "Flexible PTO and remote work options",
+            "Professional development budget",
+            "Modern equipment and tools"
+          ],
+          isActive: true,
+          createdAt: new Date().toISOString()
+        },
+        {
+          _id: "3",
+          title: "Cybersecurity Specialist",
+          department: "Security",
+          location: "On-site",
+          type: "Full-time",
+          description: "Protect our infrastructure and ensure the security of our systems and data through comprehensive security measures.",
+          requirements: [
+            "Bachelor's degree in Cybersecurity or related field",
+            "3+ years experience in cybersecurity",
+            "Knowledge of security frameworks and compliance",
+            "Experience with penetration testing",
+            "Certifications like CISSP, CEH preferred"
+          ],
+          responsibilities: [
+            "Conduct security audits and vulnerability assessments",
+            "Implement security policies and procedures",
+            "Monitor systems for security breaches",
+            "Respond to security incidents",
+            "Train staff on security best practices"
+          ],
+          salary: "$95,000 - $130,000",
+          experience: "3-6 years",
+          benefits: [
+            "Competitive salary and equity package",
+            "Comprehensive health, dental, and vision insurance",
+            "Flexible PTO and remote work options",
+            "Professional development budget",
+            "Modern equipment and tools"
+          ],
+          isActive: true,
+          createdAt: new Date().toISOString()
         }
-      } catch (error) {
-        console.error('Error deleting application:', error);
-        alert('Error deleting application. Please try again.');
-      }
+      ];
+      setJobs(mockJobs);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch job positions",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredJobs = jobs.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = selectedDepartment === 'All' || job.department === selectedDepartment;
-    const matchesLocation = selectedLocation === 'All' || job.location.includes(selectedLocation);
-    
-    return matchesSearch && matchesDepartment && matchesLocation;
-  });
-
-const handleApplicationSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  // Check if user is logged in
-  const isLoggedIn = localStorage.getItem('isLoggedIn');
-  if (!isLoggedIn) {
-    alert('Please login to submit your application');
-    navigate('/login');
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('name', applicationData.name); 
-  formData.append('email', applicationData.email);
-  formData.append('phone', applicationData.phone);
-  formData.append('linkedIn', applicationData.linkedIn);
-  formData.append('portfolio', applicationData.portfolio);
-  formData.append('experience', applicationData.experience);
-  formData.append('skills', applicationData.skills);
-  formData.append('coverLetter', applicationData.coverLetter);
-  formData.append('preferredRole', selectedJob?.title || '');
-  formData.append('availability', applicationData.availability);
-  formData.append('expectedSalary', applicationData.expectedSalary);
-  
-  if (applicationData.resume) {
-    formData.append('resume', applicationData.resume);
-  }
-  for (const [key, value] of formData.entries()) {
-  console.log(`${key}:`, value);
-}
-
-  try {
-    const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/applications/general`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    const data = response.data;
-
-    if (data.success) {
-      alert('Application submitted successfully!');
-      setShowApplicationForm(false);
-      setSelectedJob(null);
-
-      // Reset form
-      setApplicationData({
-        name: '',
-        email: '',
-        phone: '',
-        linkedIn: '',
-        portfolio: '',
-        experience: '',
-        skills: '',
-        coverLetter: '',
-        availability: '',
-        expectedSalary: '',
-        resume: null
-      });
-    } else {
-      alert('Error submitting application: ' + data.message);
-    }
-  } catch (error: any) {
-    console.error('Error:', error);
-    alert('Error submitting application. Please try again.');
-  }
-};
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setApplicationData(prev => ({ ...prev, resume: file }));
+    if (e.target.files && e.target.files[0]) {
+      setResumeFile(e.target.files[0]);
     }
   };
 
-
-return (
-  <div className="min-h-screen bg-gradient-to-b from-white to-[#ccffff] career-page">
-    <Navbar />
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    {/* Hero Section */}
-   <section className="relative py-12 flex items-center justify-center overflow-hidden">
-  <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-blue-900">
-    <h1 className="text-4xl md:text-8xl font-bold mb-8 leading-tight p-2 text-transparent bg-clip-text bg-gradient-to-br from-[hsl(210,100%,40%)] to-[hsl(195,100%,50%)] animate-pulse">
-      Join Our
-      <span className="block bg-clip-text">
-        Amazing Team
-      </span>
-    </h1>
+    const submitData = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      submitData.append(key, value);
+    });
+    
+    if (resumeFile) {
+      submitData.append('resume', resumeFile);
+    }
 
-    <p className="text-2xl md:text-xl text-blue-800 font-semibold max-w-4xl mx-auto leading-relaxed my-8 select-none">
-      Build the future with us. We're looking for passionate individuals who want to make a difference 
-      in the world of technology and innovation.
-    </p>
-  </div>
-</section>
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/api/applications/general`,
+        submitData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
 
-          
-          <div className="grid md:grid-cols-3 gap-8 mb-8 max-w-5xl mx-auto">
-  {/* Card 1 */}
-  <div className="group bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 hover:bg-white/15 hover:border-white/30 transition-all duration-500 hover:transform hover:scale-105 shadow-lg hover:shadow-[0_0_30px_hsl(195,100%,85%)]">
-    <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:rotate-12 transition-transform duration-300">
-      <Globe className="w-6 h-6 text-white" />
-    </div>
-    <h3 className="text-xl font-bold mb-3 group-hover:text-cyan-200 transition-colors duration-300">Remote-First Culture</h3>
-    <p className="text-blue-700 text-sm leading-relaxed">
-      Work from anywhere in the world with flexible hours and unlimited growth potential
-    </p>
-  </div>
+      if (response.data.success) {
+        toast({
+          title: "Application Submitted!",
+          description: "Thank you for your interest. We'll review your application and get back to you soon.",
+        });
 
-  {/* Card 2 */}
-  <div className="group bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 hover:bg-white/15 hover:border-white/30 transition-all duration-500 hover:transform hover:scale-105 shadow-lg hover:shadow-[0_0_30px_hsl(195,100%,85%)]">
-    <div className="w-16 h-16 bg-gradient-to-r from-emerald-400 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:rotate-12 transition-transform duration-300">
-      <Heart className="w-6 h-6 text-white" />
-    </div>
-    <h3 className="text-xl font-bold mb-3 group-hover:text-emerald-200 transition-colors duration-300">Comprehensive Benefits</h3>
-    <p className="text-blue-700 text-sm leading-relaxed">
-      Health, dental, vision, wellness programs, and competitive compensation packages
-    </p>
-  </div>
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          linkedIn: "",
+          portfolio: "",
+          experience: "",
+          skills: "",
+          coverLetter: "",
+          preferredRole: "",
+          availability: "",
+          expectedSalary: ""
+        });
+        setResumeFile(null);
+        setIsDialogOpen(false);
+      }
+    } catch (error: any) {
+      console.error("Error submitting application:", error);
+      toast({
+        title: "Submission Failed",
+        description: error.response?.data?.message || "Please try again later",
+        variant: "destructive",
+      });
+    }
+  };
 
-  {/* Card 3 */}
-  <div className="group bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 hover:bg-white/15 hover:border-white/30 transition-all duration-500 hover:transform hover:scale-105 shadow-lg hover:shadow-[0_0_30px_hsl(195,100%,85%)]">
-    <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:rotate-12 transition-transform duration-300">
-      <Award className="w-6 h-6 text-white" />
-    </div>
-    <h3 className="text-xl font-bold mb-3 group-hover:text-purple-200 transition-colors duration-300">Growth Opportunities</h3>
-    <p className="text-blue-700 text-sm leading-relaxed">
-      Continuous learning, mentorship programs, and clear career advancement paths
-    </p>
-  </div>
-</div>
+  const benefits = [
+    {
+      icon: Heart,
+      title: "Health & Wellness",
+      description: "Comprehensive health, dental, and vision insurance"
+    },
+    {
+      icon: Coffee,
+      title: "Work-Life Balance",
+      description: "Flexible PTO and remote work options"
+    },
+    {
+      icon: Award,
+      title: "Growth & Learning",
+      description: "Professional development budget and training"
+    },
+    {
+      icon: Zap,
+      title: "Modern Tools",
+      description: "Latest equipment and cutting-edge technology"
+    }
+  ];
 
-
-          
-          <div className="flex flex-col sm:flex-row gap-6 ml-12 justify-center ">
-            <button onClick={() => document.getElementById('positions')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-4 mr-8 bg-white text-blue-900 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-300 transform hover:scale-105 shadow-lg">
-              View Open Positions
-            </button>
-        </div>
-
-
-      {/* Creative Search and Filters Section */}
-<section className="relative py-16 bg-gradient-to-b from-white to-[#e0faff] border-b overflow-hidden shadow-sm">
-  {/* Decorative Background Blobs */}
-  <div className="absolute top-0 left-0 w-72 h-72 bg-cyan-200/20 rounded-full blur-3xl animate-pulse-slow -z-10"></div>
-  <div className="absolute bottom-0 right-0 w-72 h-72 bg-blue-100/20 rounded-full blur-2xl animate-pulse-slower -z-10"></div>
-
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-    <div className="flex flex-col lg:flex-row gap-6 items-center justify-center">
-
-      {/* Search Input */}
-      <div className="relative flex-1 max-w-md w-full transition-transform duration-300 ease-in-out hover:scale-[1.02]">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-5 h-5 pointer-events-none" />
-        <input
-          type="text"
-          placeholder="Search your dream role..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 rounded-xl border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 backdrop-blur-md bg-white/80 text-blue-800 placeholder-blue-400 shadow-md"
-        />
-      </div>
-
-      {/* Filter Dropdowns */}
-      <div className="flex flex-wrap gap-4">
-        <div className="transition-transform duration-300 ease-in-out hover:scale-[1.02]">
-          <select
-            value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="px-4 py-3 rounded-xl border border-blue-200 backdrop-blur-md bg-white/80 focus:ring-2 focus:ring-blue-400 text-blue-800 shadow-md"
-          >
-            {departments.map((dept) => (
-              <option key={dept} value={dept}>{dept}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="transition-transform duration-300 ease-in-out hover:scale-[1.02]">
-          <select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            className="px-4 py-3 rounded-xl border border-blue-200 backdrop-blur-md bg-white/80 focus:ring-2 focus:ring-blue-400 text-blue-800 shadow-md"
-          >
-            {locations.map((location) => (
-              <option key={location} value={location}>{location}</option>
-            ))}
-          </select>
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 bg-gradient-to-br from-purple-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+            <p className="mt-4 text-purple-600">Loading career opportunities...</p>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
+    );
+  }
 
+  return (
+    <div className="min-h-screen pt-20 bg-gradient-to-br from-purple-50 to-blue-50">
+      {/* Hero Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold mb-6">
+              Join Our <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Team</span>
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+              Build the future of technology with us. We're looking for passionate individuals 
+              who want to make a difference in the world of innovation.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" size="lg">
+                    <Send className="h-5 w-5 mr-2" />
+                    Apply Now
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Submit Your Application</DialogTitle>
+                    <DialogDescription>
+                      Fill out the form below to apply for a position at Sisuni Tech
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="name">Full Name *</Label>
+                        <Input
+                          id="name"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          required
+                          className="border-purple-200 focus:border-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email *</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          required
+                          className="border-purple-200 focus:border-purple-500"
+                        />
+                      </div>
+                    </div>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="phone">Phone Number *</Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          required
+                          className="border-purple-200 focus:border-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="preferredRole">Preferred Role *</Label>
+                        <Select value={formData.preferredRole} onValueChange={(value) => setFormData(prev => ({ ...prev, preferredRole: value }))}>
+                          <SelectTrigger className="border-purple-200 focus:border-purple-500">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {jobs.map((job) => (
+                              <SelectItem key={job._id} value={job.title}>
+                                {job.title}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-      {/* Your Applications Button */}
-      <section className="py-8 bg-white border-t">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <button
-            onClick={handleViewMyApplications}
-            className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold"
-          >
-            <Eye className="w-5 h-5 mr-2 inline" />
-            View Your Applications
-          </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="linkedIn">LinkedIn Profile</Label>
+                        <Input
+                          id="linkedIn"
+                          name="linkedIn"
+                          value={formData.linkedIn}
+                          onChange={handleInputChange}
+                          placeholder="https://linkedin.com/in/yourprofile"
+                          className="border-purple-200 focus:border-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="portfolio">Portfolio/Website</Label>
+                        <Input
+                          id="portfolio"
+                          name="portfolio"
+                          value={formData.portfolio}
+                          onChange={handleInputChange}
+                          placeholder="https://yourportfolio.com"
+                          className="border-purple-200 focus:border-purple-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="experience">Years of Experience *</Label>
+                        <Select value={formData.experience} onValueChange={(value) => setFormData(prev => ({ ...prev, experience: value }))}>
+                          <SelectTrigger className="border-purple-200 focus:border-purple-500">
+                            <SelectValue placeholder="Select experience" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0-1">0-1 years</SelectItem>
+                            <SelectItem value="1-3">1-3 years</SelectItem>
+                            <SelectItem value="3-5">3-5 years</SelectItem>
+                            <SelectItem value="5-10">5-10 years</SelectItem>
+                            <SelectItem value="10+">10+ years</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="availability">Availability *</Label>
+                        <Select value={formData.availability} onValueChange={(value) => setFormData(prev => ({ ...prev, availability: value }))}>
+                          <SelectTrigger className="border-purple-200 focus:border-purple-500">
+                            <SelectValue placeholder="Select availability" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="immediate">Immediate</SelectItem>
+                            <SelectItem value="2-weeks">2 weeks notice</SelectItem>
+                            <SelectItem value="1-month">1 month notice</SelectItem>
+                            <SelectItem value="2-months">2+ months</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="expectedSalary">Expected Salary</Label>
+                      <Input
+                        id="expectedSalary"
+                        name="expectedSalary"
+                        value={formData.expectedSalary}
+                        onChange={handleInputChange}
+                        placeholder="e.g., $80,000 - $100,000"
+                        className="border-purple-200 focus:border-purple-500"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="skills">Key Skills *</Label>
+                      <Textarea
+                        id="skills"
+                        name="skills"
+                        value={formData.skills}
+                        onChange={handleInputChange}
+                        placeholder="List your key technical skills, programming languages, frameworks, etc."
+                        required
+                        className="border-purple-200 focus:border-purple-500"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="coverLetter">Cover Letter *</Label>
+                      <Textarea
+                        id="coverLetter"
+                        name="coverLetter"
+                        value={formData.coverLetter}
+                        onChange={handleInputChange}
+                        placeholder="Tell us why you're interested in this position and what makes you a great fit..."
+                        required
+                        className="border-purple-200 focus:border-purple-500"
+                        rows={4}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="resume">Resume (PDF, DOC) *</Label>
+                      <Input
+                        id="resume"
+                        type="file"
+                        onChange={handleFileChange}
+                        accept=".pdf,.doc,.docx"
+                        required
+                        className="border-purple-200 focus:border-purple-500"
+                      />
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                      size="lg"
+                    >
+                      <Send className="h-5 w-5 mr-2" />
+                      Submit Application
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              <Button variant="outline" size="lg" className="border-purple-200 text-purple-600 hover:bg-purple-50">
+                View Open Positions
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* My Applications Modal */}
-      {showMyApplications && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Your Applications ({myApplications.length})
-                </h2>
-                <button
-                  onClick={() => setShowMyApplications(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              {myApplications.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <Search className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">No applications found</h3>
-                  <p className="text-gray-500">You haven't submitted any applications yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {myApplications.map((application) => (
-                    <div key={application._id} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">{application.preferredRole}</h3>
-                          <p className="text-gray-600 mb-2">Applied on: {new Date(application.createdAt).toLocaleDateString()}</p>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            application.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            application.status === 'reviewed' ? 'bg-blue-100 text-blue-800' :
-                            application.status === 'interview' ? 'bg-purple-100 text-purple-800' :
-                            application.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                          </span>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEditApplication(application)}
-                            className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
-                            title="Edit Application"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteApplication(application._id)}
-                            className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                            title="Delete Application"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="grid md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p><strong>Experience:</strong> {application.experience}</p>
-                          <p><strong>Availability:</strong> {application.availability}</p>
-                        </div>
-                        <div>
-                          <p><strong>Expected Salary:</strong> {application.expectedSalary || 'Not specified'}</p>
-                          <p><strong>Resume:</strong> {application.resumeFileName ? 'Uploaded' : 'Not uploaded'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Application Form Modal */}
-      {showEditForm && editingApplication && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Edit Application - {editingApplication.preferredRole}
-                </h2>
-                <button
-                  onClick={() => setShowEditForm(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleUpdateApplication} className="p-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={applicationData.name}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={applicationData.email}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={applicationData.phone}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    LinkedIn Profile
-                  </label>
-                  <input
-                    type="url"
-                    value={applicationData.linkedIn}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, linkedIn: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://linkedin.com/in/yourprofile"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Portfolio URL
-                  </label>
-                  <input
-                    type="url"
-                    value={applicationData.portfolio}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, portfolio: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://yourportfolio.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Resume (Leave empty to keep current)
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={handleFileChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Years of Experience *
-                  </label>
-                  <select
-                    required
-                    value={applicationData.experience}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, experience: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Select experience</option>
-                    <option value="0-1">0-1 years</option>
-                    <option value="1-3">1-3 years</option>
-                    <option value="3-5">3-5 years</option>
-                    <option value="5-10">5-10 years</option>
-                    <option value="10+">10+ years</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Expected Salary
-                  </label>
-                  <input
-                    type="text"
-                    value={applicationData.expectedSalary}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, expectedSalary: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., $80,000 - $100,000"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Skills *
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={applicationData.skills}
-                  onChange={(e) => setApplicationData(prev => ({ ...prev, skills: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="List your key skills and technologies..."
-                />
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cover Letter *
-                </label>
-                <textarea
-                  rows={4}
-                  required
-                  value={applicationData.coverLetter}
-                  onChange={(e) => setApplicationData(prev => ({ ...prev, coverLetter: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Tell us why you're interested in this position..."
-                />
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Availability *
-                </label>
-                <select
-                  required
-                  value={applicationData.availability}
-                  onChange={(e) => setApplicationData(prev => ({ ...prev, availability: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select availability</option>
-                  <option value="immediate">Immediate</option>
-                  <option value="2-weeks">2 weeks notice</option>
-                  <option value="1-month">1 month</option>
-                  <option value="2-months">2 months</option>
-                  <option value="negotiable">Negotiable</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setShowEditForm(false)}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Update Application
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Job Listings */}
-       {/* Job Listings */}
-      <section id="positions" className="py-16 bg-white" >
+      {/* Why Join Us */}
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold mb-6">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Now Hiring
-            </div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Open Positions ({filteredJobs.length})
-            </h2>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Join Sisuni Tech?</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Find your next opportunity and grow with us
+              We offer more than just a job - we provide a platform for growth, innovation, and impact
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {benefits.map((benefit, index) => (
+              <Card key={benefit.title} className="text-center hover:shadow-lg transition-shadow border-purple-100">
+                <CardHeader>
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
+                    <benefit.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <CardTitle className="text-purple-800">{benefit.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>{benefit.description}</CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Open Positions */}
+      <section className="py-20 bg-gradient-to-br from-purple-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Open Positions</h2>
+            <p className="text-xl text-gray-600">
+              Find the perfect role that matches your skills and passion
             </p>
           </div>
 
           <div className="grid gap-8">
-            {filteredJobs.map((job) => (
-              <div
-                key={job.id}
-                className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-100 p-8 hover:shadow-2xl hover:border-blue-200 transition-all duration-500 cursor-pointer transform hover:-translate-y-2"
-                onClick={() => setSelectedJob(job)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
-                      {job.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors duration-300">{job.title}</h3>
-                      <p className="text-gray-600 mb-6 line-clamp-2 leading-relaxed">{job.description}</p>
-                      <div className="flex flex-wrap gap-6 text-sm text-gray-500">
+            {jobs.filter(job => job.isActive).map((job) => (
+              <Card key={job._id} className="hover:shadow-lg transition-shadow bg-white border-purple-100">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-2xl text-purple-800 mb-2">{job.title}</CardTitle>
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                         <div className="flex items-center">
-                          <Building className="w-4 h-4 mr-1" />
+                          <Briefcase className="h-4 w-4 mr-1" />
                           {job.department}
                         </div>
                         <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-1" />
+                          <MapPin className="h-4 w-4 mr-1" />
                           {job.location}
                         </div>
                         <div className="flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
+                          <Clock className="h-4 w-4 mr-1" />
                           {job.type}
                         </div>
                         <div className="flex items-center">
-                          <User className="w-4 h-4 mr-1" />
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          {job.salary}
+                        </div>
+                        <div className="flex items-center">
+                          <Users className="h-4 w-4 mr-1" />
                           {job.experience}
                         </div>
                       </div>
                     </div>
+                    <Badge className="bg-green-100 text-green-800 border-green-200">
+                      Open
+                    </Badge>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-emerald-600 mb-4">{job.salary}</div>
-                    <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold">
-                      View Details
-                    </button>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="font-semibold text-purple-700 mb-2">Job Description</h4>
+                      <p className="text-gray-700">{job.description}</p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-purple-700 mb-2">Requirements</h4>
+                      <ul className="space-y-1">
+                        {job.requirements.map((req, index) => (
+                          <li key={index} className="flex items-start">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                            <span className="text-gray-700 text-sm">{req}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-purple-700 mb-2">Responsibilities</h4>
+                      <ul className="space-y-1">
+                        {job.responsibilities.map((resp, index) => (
+                          <li key={index} className="flex items-start">
+                            <Star className="h-4 w-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                            <span className="text-gray-700 text-sm">{resp}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h4 className="font-semibold text-blue-700 mb-2">What We Offer</h4>
+                      <ul className="space-y-1">
+                        {job.benefits.map((benefit, index) => (
+                          <li key={index} className="text-blue-700 text-sm">• {benefit}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-4">
+                      <div className="text-sm text-gray-500">
+                        Posted {new Date(job.createdAt).toLocaleDateString()}
+                      </div>
+                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, preferredRole: job.title }));
+                              setSelectedJob(job);
+                            }}
+                          >
+                            Apply Now
+                          </Button>
+                        </DialogTrigger>
+                      </Dialog>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-
-          {filteredJobs.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <Search className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">No positions found</h3>
-              <p className="text-gray-500 max-w-md mx-auto">Try adjusting your search criteria or check back later for new opportunities.</p>
-            </div>
-          )}
         </div>
       </section>
 
-      {/* Job Detail Modal */}
-      {selectedJob && (
-        // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        //   <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto hover:border-white/30 transition-all duration-500 hover:transform hover:scale-105 shadow-lg hover:shadow-[0_0_30px_rgba(0,191,255,0.6)]">
-             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div className="transition-all duration-500 transform hover:scale-[1.04] shadow-lg hover:shadow-[0_0_50px_rgba(0,191,255,0.75)] rounded-3xl">
-      <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 hover:bg-white/15 hover:border-white/30">
-
-
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
-                  <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
-                    {selectedJob.icon}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedJob.title}</h2>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                      <div className="flex items-center">
-                        <Building className="w-4 h-4 mr-1" />
-                        {selectedJob.department}
-                      </div>
-                      <div className="flex items-center">
-                        <MapPin className="w-4 h-4 mr-1" />
-                        {selectedJob.location}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {selectedJob.type}
-                      </div>
-                      <div className="flex items-center">
-                        <User className="w-4 h-4 mr-1" />
-                        {selectedJob.experience}
-                      </div>
-                    </div>
-                    <div className="text-xl font-semibold text-green-600 mt-2">{selectedJob.salary}</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedJob(null)}
-                  className="text-gray-400 hover:text-gray-600"
+      {/* CTA Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-12 text-white">
+            <h2 className="text-3xl font-bold mb-4">Don't See the Right Role?</h2>
+            <p className="text-xl mb-8 opacity-90">
+              We're always looking for talented individuals. Send us your resume and we'll keep you in mind for future opportunities.
+            </p>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="secondary" 
+                  size="lg"
+                  onClick={() => setFormData(prev => ({ ...prev, preferredRole: "General Application" }))}
                 >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="grid md:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Job Description</h3>
-                  <p className="text-gray-600 mb-6">{selectedJob.description}</p>
-
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Requirements</h3>
-                  <ul className="space-y-2 text-gray-600">
-                    {selectedJob.requirements.map((req, index) => (
-                      <li key={index} className="flex items-start">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                        {req}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Responsibilities</h3>
-                  <ul className="space-y-2 text-gray-600 mb-6">
-                    {selectedJob.responsibilities.map((resp, index) => (
-                      <li key={index} className="flex items-start">
-                        <Zap className="w-5 h-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                        {resp}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 mb-2">What We Offer</h4>
-                    <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• Competitive salary and equity package</li>
-                      <li>• Comprehensive health, dental, and vision insurance</li>
-                      <li>• Flexible PTO and remote work options</li>
-                      <li>• Professional development budget</li>
-                      <li>• Modern equipment and tools</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
-                <button
-                  onClick={() => setSelectedJob(null)}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => setShowApplicationForm(true)}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Apply Now
-                </button>
-              </div>
-            </div>
+                  Submit General Application
+                </Button>
+              </DialogTrigger>
+            </Dialog>
           </div>
         </div>
-        </div>
-      )}
-
-      {/* Application Form Modal */}
-      {showApplicationForm && selectedJob && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Apply for {selectedJob.title}
-                </h2>
-                <button
-                  onClick={() => setShowApplicationForm(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleApplicationSubmit} className="p-6">
-              <div className="grid md:grid-cols-2 gap-6">
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={applicationData.name}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={applicationData.email}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={applicationData.phone}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    LinkedIn Profile
-                  </label>
-                  <input
-                    type="url"
-                    value={applicationData.linkedIn}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, linkedIn: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://linkedin.com/in/yourprofile"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Portfolio URL
-                  </label>
-                  <input
-                    type="url"
-                    value={applicationData.portfolio}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, portfolio: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://yourportfolio.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Resume *
-                  </label>
-                  <input
-                    type="file"
-                    required
-                    accept=".pdf,.doc,.docx"
-                    onChange={handleFileChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Years of Experience *
-                  </label>
-                  <select
-                    required
-                    value={applicationData.experience}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, experience: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Select experience</option>
-                    <option value="0-1">0-1 years</option>
-                    <option value="1-3">1-3 years</option>
-                    <option value="3-5">3-5 years</option>
-                    <option value="5-10">5-10 years</option>
-                    <option value="10+">10+ years</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Expected Salary
-                  </label>
-                  <input
-                    type="text"
-                    value={applicationData.expectedSalary}
-                    onChange={(e) => setApplicationData(prev => ({ ...prev, expectedSalary: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., $80,000 - $100,000"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Skills *
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  value={applicationData.skills}
-                  onChange={(e) => setApplicationData(prev => ({ ...prev, skills: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="List your key skills and technologies..."
-                />
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cover Letter *
-                </label>
-                <textarea
-                  rows={4}
-                  required
-                  value={applicationData.coverLetter}
-                  onChange={(e) => setApplicationData(prev => ({ ...prev, coverLetter: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Tell us why you're interested in this position..."
-                />
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Availability *
-                </label>
-                <select
-                  required
-                  value={applicationData.availability}
-                  onChange={(e) => setApplicationData(prev => ({ ...prev, availability: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select availability</option>
-                  <option value="immediate">Immediate</option>
-                  <option value="2-weeks">2 weeks notice</option>
-                  <option value="1-month">1 month</option>
-                  <option value="2-months">2 months</option>
-                  <option value="negotiable">Negotiable</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setShowApplicationForm(false)}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-colors flex items-center"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Submit Application
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* <Footer /> */}
+      </section>
     </div>
   );
 };

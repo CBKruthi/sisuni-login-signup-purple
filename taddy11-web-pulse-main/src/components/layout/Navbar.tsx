@@ -134,9 +134,6 @@ const Navbar = () => {
               </DropdownMenu>
             ) : (
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/login">Login</Link>
-                </Button>
                 <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" asChild>
                   <Link to="/signup">Sign Up</Link>
                 </Button>
@@ -204,11 +201,6 @@ const Navbar = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Button variant="outline" size="sm" className="w-full" asChild>
-                      <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                        Login
-                      </Link>
-                    </Button>
                     <Button size="sm" className="w-full bg-gradient-to-r from-purple-600 to-blue-600" asChild>
                       <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
                         Sign Up

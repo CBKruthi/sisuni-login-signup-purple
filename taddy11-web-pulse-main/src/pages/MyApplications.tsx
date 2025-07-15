@@ -189,10 +189,10 @@ const MyApplications = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(`${import.meta.env.VITE_BASE_URL}/uploads/resumes/${application.resumeFileName}`, '_blank')}
-                          className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                          className="border-blue-200 text-blue-600 hover:bg-blue-50"
                         >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Resume
+                          <FileText className="h-4 w-4 mr-2" />
+                          Resume
                         </Button>
                       )}
                     </div>
