@@ -63,8 +63,11 @@ interface JobPosition {
   location: string;
   type: string;
   description: string;
-  requirements: string;
+  requirements: string[];
+  responsibilities: string[];
   salary: string;
+  experience: string;
+  benefits: string[];
   isActive: boolean;
   createdAt: string;
 }
@@ -84,8 +87,11 @@ const AdminDashboard = () => {
     location: "",
     type: "full-time",
     description: "",
-    requirements: "",
+    requirements: [""],
+    responsibilities: [""],
     salary: "",
+    experience: "",
+    benefits: [""],
     isActive: true
   });
 
@@ -121,34 +127,19 @@ const AdminDashboard = () => {
   };
 
   const fetchJobPositions = async () => {
-    // Mock job positions - replace with actual API call
-    const mockJobs: JobPosition[] = [
-      {
-        _id: "1",
-        title: "Senior Full Stack Developer",
-        department: "Engineering",
-        location: "Remote",
-        type: "full-time",
-        description: "We are looking for a senior full stack developer...",
-        requirements: "5+ years experience, React, Node.js, MongoDB",
-        salary: "₹15-25 LPA",
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        _id: "2",
-        title: "Cybersecurity Specialist",
-        department: "Security",
-        location: "Hybrid",
-        type: "full-time",
-        description: "Join our security team to protect our infrastructure...",
-        requirements: "3+ years in cybersecurity, CISSP preferred",
-        salary: "₹12-20 LPA",
-        isActive: true,
-        createdAt: new Date().toISOString()
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/jobs`);
+      if (response.data.success) {
+        setJobPositions(response.data.jobs);
       }
-    ];
-    setJobPositions(mockJobs);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch job positions",
+        variant: "destructive",
+      });
+    }
   };
 
   const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
@@ -203,57 +194,117 @@ const AdminDashboard = () => {
   };
 
   const handleCreateJob = () => {
-    // Mock create job - replace with actual API call
-    const job: JobPosition = {
-      _id: Date.now().toString(),
-      ...newJob,
-      createdAt: new Date().toISOString()
+    const createJob = async () => {
+      try {
+        const userEmail = localStorage.getItem('userEmail') || 'admin';
+        const jobData = {
+          ...newJob,
+          requirements: newJob.requirements.filter(req => req.trim() !== ''),
+          responsibilities: newJob.responsibilities.filter(resp => resp.trim() !== ''),
+          benefits: newJob.benefits.filter(benefit => benefit.trim() !== ''),
+          createdBy: userEmail
+        };
+
+        const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/jobs`, jobData);
+        
+        if (response.data.success) {
+          setJobPositions(prev => [response.data.job, ...prev]);
+          setNewJob({
+            title: "",
+            department: "",
+            location: "",
+            type: "full-time",
+            description: "",
+            requirements: [""],
+            responsibilities: [""],
+            salary: "",
+            experience: "",
+            benefits: [""],
+            isActive: true
+          });
+          setIsJobDialogOpen(false);
+          
+          toast({
+            title: "Job Created",
+            description: "New job position has been created successfully",
+          });
+        }
+      } catch (error) {
+        console.error("Error creating job:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create job position",
+          variant: "destructive",
+        });
+      }
     };
     
-    setJobPositions(prev => [job, ...prev]);
-    setNewJob({
-      title: "",
-      department: "",
-      location: "",
-      type: "full-time",
-      description: "",
-      requirements: "",
-      salary: "",
-      isActive: true
-    });
-    setIsJobDialogOpen(false);
-    
-    toast({
-      title: "Job Created",
-      description: "New job position has been created successfully",
-    });
+    createJob();
   };
 
   const handleUpdateJob = () => {
     if (!editingJob) return;
     
-    // Mock update job - replace with actual API call
-    setJobPositions(prev => 
-      prev.map(job => 
-        job._id === editingJob._id ? { ...editingJob } : job
-      )
-    );
-    setEditingJob(null);
+    const updateJob = async () => {
+      try {
+        const userEmail = localStorage.getItem('userEmail') || 'admin';
+        const jobData = {
+          ...editingJob,
+          updatedBy: userEmail
+        };
+
+        const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/jobs/${editingJob._id}`, jobData);
+        
+        if (response.data.success) {
+          setJobPositions(prev => 
+            prev.map(job => 
+              job._id === editingJob._id ? response.data.job : job
+            )
+          );
+          setEditingJob(null);
+          
+          toast({
+            title: "Job Updated",
+            description: "Job position has been updated successfully",
+          });
+        }
+      } catch (error) {
+        console.error("Error updating job:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update job position",
+          variant: "destructive",
+        });
+      }
+    };
     
-    toast({
-      title: "Job Updated",
-      description: "Job position has been updated successfully",
-    });
+    updateJob();
   };
 
   const handleDeleteJob = (jobId: string) => {
-    // Mock delete job - replace with actual API call
-    setJobPositions(prev => prev.filter(job => job._id !== jobId));
+    const deleteJob = async () => {
+      try {
+        const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/jobs/${jobId}`);
+        
+        if (response.data.success) {
+          setJobPositions(prev => prev.filter(job => job._id !== jobId));
+          
+          toast({
+            title: "Job Deleted",
+            description: "Job position has been deleted successfully",
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting job:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete job position",
+          variant: "destructive",
+        });
+      }
+    };
     
-    toast({
-      title: "Job Deleted",
-      description: "Job position has been deleted successfully",
-    });
+    deleteJob();
   };
 
   const getStatusColor = (status: string) => {
@@ -619,6 +670,15 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div>
+                      <Label htmlFor="experience">Experience Required</Label>
+                      <Input
+                        id="experience"
+                        value={newJob.experience}
+                        onChange={(e) => setNewJob(prev => ({ ...prev, experience: e.target.value }))}
+                        placeholder="e.g. 2-4 years"
+                      />
+                    </div>
+                    <div>
                       <Label htmlFor="description">Job Description</Label>
                       <Textarea
                         id="description"
@@ -629,14 +689,109 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="requirements">Requirements</Label>
-                      <Textarea
-                        id="requirements"
-                        value={newJob.requirements}
-                        onChange={(e) => setNewJob(prev => ({ ...prev, requirements: e.target.value }))}
-                        placeholder="List the required skills and qualifications..."
-                        rows={3}
-                      />
+                      <Label>Requirements</Label>
+                      {newJob.requirements.map((req, index) => (
+                        <div key={index} className="flex gap-2 mb-2">
+                          <Input
+                            value={req}
+                            onChange={(e) => {
+                              const newReqs = [...newJob.requirements];
+                              newReqs[index] = e.target.value;
+                              setNewJob(prev => ({ ...prev, requirements: newReqs }));
+                            }}
+                            placeholder="Enter requirement"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newReqs = newJob.requirements.filter((_, i) => i !== index);
+                              setNewJob(prev => ({ ...prev, requirements: newReqs }));
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNewJob(prev => ({ ...prev, requirements: [...prev.requirements, ""] }))}
+                      >
+                        Add Requirement
+                      </Button>
+                    </div>
+                    <div>
+                      <Label>Responsibilities</Label>
+                      {newJob.responsibilities.map((resp, index) => (
+                        <div key={index} className="flex gap-2 mb-2">
+                          <Input
+                            value={resp}
+                            onChange={(e) => {
+                              const newResps = [...newJob.responsibilities];
+                              newResps[index] = e.target.value;
+                              setNewJob(prev => ({ ...prev, responsibilities: newResps }));
+                            }}
+                            placeholder="Enter responsibility"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newResps = newJob.responsibilities.filter((_, i) => i !== index);
+                              setNewJob(prev => ({ ...prev, responsibilities: newResps }));
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNewJob(prev => ({ ...prev, responsibilities: [...prev.responsibilities, ""] }))}
+                      >
+                        Add Responsibility
+                      </Button>
+                    </div>
+                    <div>
+                      <Label>Benefits</Label>
+                      {newJob.benefits.map((benefit, index) => (
+                        <div key={index} className="flex gap-2 mb-2">
+                          <Input
+                            value={benefit}
+                            onChange={(e) => {
+                              const newBenefits = [...newJob.benefits];
+                              newBenefits[index] = e.target.value;
+                              setNewJob(prev => ({ ...prev, benefits: newBenefits }));
+                            }}
+                            placeholder="Enter benefit"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newBenefits = newJob.benefits.filter((_, i) => i !== index);
+                              setNewJob(prev => ({ ...prev, benefits: newBenefits }));
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNewJob(prev => ({ ...prev, benefits: [...prev.benefits, ""] }))}
+                      >
+                        Add Benefit
+                      </Button>
                     </div>
                   </div>
                   <DialogFooter>
@@ -732,13 +887,23 @@ const AdminDashboard = () => {
                                     </Select>
                                   </div>
                                 </div>
-                                <div>
-                                  <Label htmlFor="edit-salary">Salary Range</Label>
-                                  <Input
-                                    id="edit-salary"
-                                    value={editingJob.salary}
-                                    onChange={(e) => setEditingJob(prev => prev ? ({ ...prev, salary: e.target.value }) : null)}
-                                  />
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label htmlFor="edit-experience">Experience Required</Label>
+                                    <Input
+                                      id="edit-experience"
+                                      value={editingJob.experience}
+                                      onChange={(e) => setEditingJob(prev => prev ? ({ ...prev, experience: e.target.value }) : null)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-salary">Salary Range</Label>
+                                    <Input
+                                      id="edit-salary"
+                                      value={editingJob.salary}
+                                      onChange={(e) => setEditingJob(prev => prev ? ({ ...prev, salary: e.target.value }) : null)}
+                                    />
+                                  </div>
                                 </div>
                                 <div>
                                   <Label htmlFor="edit-description">Job Description</Label>
@@ -750,13 +915,47 @@ const AdminDashboard = () => {
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor="edit-requirements">Requirements</Label>
-                                  <Textarea
-                                    id="edit-requirements"
-                                    value={editingJob.requirements}
-                                    onChange={(e) => setEditingJob(prev => prev ? ({ ...prev, requirements: e.target.value }) : null)}
-                                    rows={3}
-                                  />
+                                  <Label>Requirements</Label>
+                                  {editingJob.requirements.map((req, index) => (
+                                    <div key={index} className="flex gap-2 mb-2">
+                                      <Input
+                                        value={req}
+                                        onChange={(e) => {
+                                          if (editingJob) {
+                                            const newReqs = [...editingJob.requirements];
+                                            newReqs[index] = e.target.value;
+                                            setEditingJob(prev => prev ? ({ ...prev, requirements: newReqs }) : null);
+                                          }
+                                        }}
+                                        placeholder="Enter requirement"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          if (editingJob) {
+                                            const newReqs = editingJob.requirements.filter((_, i) => i !== index);
+                                            setEditingJob(prev => prev ? ({ ...prev, requirements: newReqs }) : null);
+                                          }
+                                        }}
+                                      >
+                                        Remove
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (editingJob) {
+                                        setEditingJob(prev => prev ? ({ ...prev, requirements: [...prev.requirements, ""] }) : null);
+                                      }
+                                    }}
+                                  >
+                                    Add Requirement
+                                  </Button>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <input
@@ -824,7 +1023,19 @@ const AdminDashboard = () => {
                       </div>
                       <div>
                         <p className="text-sm text-purple-600 font-medium mb-1">Requirements</p>
-                        <p className="text-gray-700 text-sm">{job.requirements}</p>
+                        <ul className="text-gray-700 text-sm space-y-1">
+                          {job.requirements.map((req, index) => (
+                            <li key={index}>• {req}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="text-sm text-purple-600 font-medium mb-1">Responsibilities</p>
+                        <ul className="text-gray-700 text-sm space-y-1">
+                          {job.responsibilities.map((resp, index) => (
+                            <li key={index}>• {resp}</li>
+                          ))}
+                        </ul>
                       </div>
                       <div className="text-xs text-gray-500">
                         Created on {new Date(job.createdAt).toLocaleDateString()}
